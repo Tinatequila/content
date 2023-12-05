@@ -1,4 +1,57 @@
----
+mQ.medi(https://bugzilla.mozilla.org); [WebKit](https://bugs.webkit.org); [Blink](https://www.chromium.org/issue-tracking/); [Opera](https://bugs.opera.com/)const UA = navigator.userAgent;
+const isWebkit =
+  /\b(iPad|iPhone|iPod)\b/.test(UA) &&
+  /WebKit/.test(UA) &&
+  !/Edge/.test(UA) &&
+  !window.MSStream;
+
+let mediaQueryUpdated = true;
+const mqL = [];
+
+function whenMediaChanges() {
+  mediaQueryUpdated = true;
+}
+
+const listenToMediaQuery = isWebkit
+  ? (mQ, f) => {
+      if (/height|width/.test(mQ.media)) {
+        mqL.push([mQ, f]);
+      }
+      mQ.addListener(f);
+      mQ.addListener(whenMediaChanges);
+    }
+  : () => {};
+
+const destroyMediaQuery = isWebkit
+  ? (mQ) => {
+      for (let i = 0; i < mqL.length; i++) {
+        if (mqL[i][0] === mQ) {
+          mqL.splice(i, 1);
+        }
+      }
+      mQ.removeListener(whenMediaChanges);
+    }
+  : listenToMediaQuery;
+
+let orientationChanged = false;
+addEventListener(
+  "orientationchange",
+  () => {
+    orientationChanged = true;
+  },
+  PASSIVE_LISTENER_OPTION,
+);
+
+addEventListener("resize", () =>
+  setTimeout(() => {
+    if (orientationChanged && !mediaQueryUpdated) {
+      for (let i = 0; i < mqL.length; i++) {
+        mqL[i][1](mqL[i][0]);
+      }
+    }
+    mediaQueryUpdated = orientationChanged = false;
+  }, 0),
+);https://bugzilla.mozilla.orgmQ.mediahttps://bugs.webkit.orghttps://www.chromium.org/issue-tracking/https://bugs.opera.com/https://docs.google.com/document/d/1m2wiS1mC3y8VEhy5xxdIoftBtdJoAy5egP5ocZxOJaY/edit?usp=drivesdk---
 title: Browser detection using the user agent
 slug: Web/HTTP/Browser_detection_using_the_user_agent
 page-type: guide
